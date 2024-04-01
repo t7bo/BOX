@@ -1,10 +1,60 @@
 import scrapy
+import time
+from loguru import logger
+from scrapy.spiders import CrawlSpider
+from scrapy_selenium import SeleniumRequest
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 
-
-class ImdbMoviesSpider(scrapy.Spider):
+class ImdbMoviesSpider(CrawlSpider):
     name = "imdb_movies"
     allowed_domains = ["www.imdb.com"]
-    start_urls = ["https://www.imdb.com/search/title/?title_type=feature"]
+    driver = webdriver.Chrome()
+        
+    def start_requests(self): # URL -> french audio movies (no documentaries, no shorts) from 2024 only
+        url = "https://www.imdb.com/search/title/?title_type=feature&release_date=2024-01-01,2024-12-31&genres=!documentary,!short&languages=fr"
+        yield SeleniumRequest(url=url, callback=self.parse)
 
+    @logger.catch
     def parse(self, response):
-        pass
+        
+        # 1) Reject Cookies if pop-up emerges
+        self.driver.get(response.url)
+        time.sleep(5)
+        reject_cookies = self.driver.find_element(By.XPATH, '//*[@id="__next"]/div/div/div[2]/div/button[1]')
+        reject_cookies.click()
+        time.sleep(5)
+        
+        # 2) Check if there is a "see more" button
+        try:
+            while True:
+                button = self.driver.find_element(By.XPATH, '//main/div[2]/div[3]/section/section/div/section/section/div[2]/div/section/div[2]/div[2]/div[2]/div/span/button')
+                # Scroll down the page until you get to the element using JavaScript
+                self.driver.execute_script("arguments[0].scrollIntoView();", button)
+                time.sleep(5) # wait 5s
+                # If there's a button "see more" -> click on it
+                button.click()
+                time.sleep(5)
+        except NoSuchElementException:
+            pass
+
+        # 3) When the page is entirely loaded -> Get all movie urls
+        movie_links = self.driver.find_elements(By.CSS_SELECTOR, 'a.ipc-title-link-wrapper')
+        for link in movie_links:
+            movie_url = link.get_attribute('href')
+            yield scrapy.Request(url=movie_url, callback=self.parse_movie_page)
+
+    @logger.catch
+    def parse_movie_page(self, response):
+        
+        # Reload driver with the movie url
+        self.driver.get(response.url)
+        
+        # Scrap all the information from every movie page
+        movie_title = self.driver.find_element(By.XPATH, '//main/div/section[1]/section/div[3]/section/section/div[2]/div[1]/h1/span')
+        
+        yield {
+            'movie_url': response.url,
+            'movie_title' : movie_title.text,
+        }
