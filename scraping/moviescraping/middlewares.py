@@ -9,6 +9,42 @@ from scrapy import signals
 from itemadapter import is_item, ItemAdapter
 
 
+import time
+import scrapy
+from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
+from fake_useragent import UserAgent
+from scrapy.exceptions import IgnoreRequest
+
+class RandomUserAgentMiddleware(UserAgentMiddleware):
+    def __init__(self, user_agent=''):
+        self.user_agent = user_agent
+
+    def process_request(self, request, spider):
+        user_agent = UserAgent().random
+        request.headers.setdefault('User-Agent', user_agent)
+
+class CustomMiddleware(RandomUserAgentMiddleware):
+    def __init__(self, user_agent=''):
+        super().__init__(user_agent)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        middleware = cls()
+        crawler.signals.connect(middleware.spider_opened, signal=scrapy.signals.spider_opened)
+        return middleware
+
+    def spider_opened(self, spider):
+        spider.logger.info("CustomMiddleware is enabled")
+
+    def process_response(self, request, response, spider):
+        if response.status in {503, 403}:
+            spider.logger.warning("HTTP 503 Error detected. Pausing scraping for 2 minutes.")
+            time.sleep(120)
+            return request.copy()
+        return response
+
+        
+
 class MoviescrapingSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the spider middleware does not modify the
