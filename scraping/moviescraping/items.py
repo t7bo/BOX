@@ -11,7 +11,12 @@ class MoviescrapingItem(scrapy.Item):
     # name = scrapy.Field()
     pass
 
-
+class ImdbOscarPageItem(scrapy.Item):
+    url = scrapy.Field()
+    year = scrapy.Field()
+    categories = scrapy.Field()
+    nominees = scrapy.Field()
+    
 class MovieItem(scrapy.Item):
     movie_id = scrapy.Field()
     movie_url = scrapy.Field()

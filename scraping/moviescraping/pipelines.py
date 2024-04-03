@@ -327,3 +327,120 @@ class MoviesPipeline:
         # self.con.commit()
                     
         return item
+    
+class OscarsPipeline:
+    def __init__(self) -> None:
+        # create database
+        self.con = sqlite3.connect('../data/movies.db')
+        # create cursor to execute commands
+        self.cur = self.con.cursor()
+        # create table
+        self.cur.execute("""
+                         CREATE TABLE IF NOT EXISTS oscars(
+                             
+                             id INTEGER PRIMARY KEY AUTOINCREMENT,
+                             url TEXT,
+                             year TEXT,
+                             categories TEXT,
+                             nominees TEXT
+                             )
+                             
+                             """)    
+    
+    def process_item(self, item, spider):
+        adapter = ItemAdapter(item)
+        
+        field_names = adapter.field_names()
+        
+        for field_name in field_names:
+            
+            if field_name == 'url':
+                url = adapter.get('url')
+                if url is not None:
+                    url = str(url)
+                adapter['url'] = url
+            
+            elif field_name == 'year':
+                year = adapter.get('year')
+                year = str(year)
+                year = ''.join(filter(str.isdigit, year))
+                year = year[-5:-1]
+                adapter["year"] = int(year)
+                
+            elif field_name == 'categories':
+                categories = adapter.get('categories')
+                categories = str(categories)
+                categ = categories.split("', '")
+                
+                modified_categ = []
+
+                for element in categ:
+                    if "['" in element:
+                        element = element.replace("['", "")
+                    elif "']" in element:
+                        element = element.replace("']", "")
+                    
+                    # Add the modified (or not) element to the empty list declared before the for loop
+                    modified_categ.append(element)
+                
+                modified_categ = str(modified_categ).replace('[', '').replace(']', '')
+                
+                adapter['categories'] = str(modified_categ)
+                
+            elif field_name == 'nominees':
+                nominees = adapter.get('nominees')
+                if nominees is not None:
+                    try:
+                        nominees = [str(nominee).replace('\\n', ',') for nominee in nominees]
+                        nominees = str(nominees)
+                    except Exception as e:
+                        nominees = str(nominees)
+                adapter['nominees'] = nominees
+                
+            # elif field_name == 'winners':
+            #     winners = adapter.get('winners')
+            #     if winners is not None:
+            #         try:
+            #             winners = [str(winner).replace('\\n', ',') for winner in winners]
+            #             winners = winners.replace("\\", '')
+            #         except Exception as e:
+            #             winners = str(winners)
+            #     adapter['winners'] = winners
+        
+        self.cur.execute("""
+                         INSERT INTO oscars (url, year, categories, nominees) VALUES (?, ?, ?, ?)
+                         """,
+                         
+                         (
+                             adapter['url'],
+                             adapter['year'],
+                             adapter['categories'],
+                             adapter['nominees'],
+                         )
+                         
+                         )
+        
+        self.con.commit()
+        
+        self.cur.execute("""
+                         CREATE TABLE IF NOT EXISTS oscars_categories(
+                             
+                             category TEXT UNIQUE
+                             
+                             )
+                             """)
+
+        # Loop on every modified category from the modified_categ list & insert data into table
+        catset = set(modified_categ)
+        for cat in catset:
+            self.cur.execute("""
+                                    INSERT OR IGNORE INTO oscars_categories (category) VALUES (?)
+                                    """,
+                                    (
+                                        cat,
+                                    ))
+        
+        self.con.commit()
+                    
+        return item
+    
