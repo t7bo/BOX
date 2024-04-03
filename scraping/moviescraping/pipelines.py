@@ -342,7 +342,7 @@ class OscarsPipeline:
                              url TEXT,
                              year TEXT,
                              categories TEXT,
-                             nominees TEXT
+                             winners TEXT
                              )
                              
                              """)    
@@ -387,35 +387,35 @@ class OscarsPipeline:
                 
                 adapter['categories'] = str(modified_categ)
                 
-            elif field_name == 'nominees':
-                nominees = adapter.get('nominees')
-                if nominees is not None:
-                    try:
-                        nominees = [str(nominee).replace('\\n', ',') for nominee in nominees]
-                        nominees = str(nominees)
-                    except Exception as e:
-                        nominees = str(nominees)
-                adapter['nominees'] = nominees
-                
-            # elif field_name == 'winners':
-            #     winners = adapter.get('winners')
-            #     if winners is not None:
+            # elif field_name == 'nominees':
+            #     nominees = adapter.get('nominees')
+            #     if nominees is not None:
             #         try:
-            #             winners = [str(winner).replace('\\n', ',') for winner in winners]
-            #             winners = winners.replace("\\", '')
+            #             nominees = [str(nominee).replace('\\n', ',') for nominee in nominees]
+            #             nominees = str(nominees)
             #         except Exception as e:
-            #             winners = str(winners)
-            #     adapter['winners'] = winners
+            #             nominees = str(nominees)
+            #     adapter['nominees'] = nominees
+                
+            elif field_name == 'winners':
+                winners = adapter.get('winners')
+                if winners is not None:
+                    try:
+                        winners = [str(winner).replace('\\n', ',') for winner in winners]
+                        winners = winners.replace("\\", '')
+                    except Exception as e:
+                        winners = str(winners)
+                adapter['winners'] = winners
         
         self.cur.execute("""
-                         INSERT INTO oscars (url, year, categories, nominees) VALUES (?, ?, ?, ?)
+                         INSERT INTO oscars (url, year, categories, winners) VALUES (?, ?, ?, ?)
                          """,
                          
                          (
                              adapter['url'],
                              adapter['year'],
                              adapter['categories'],
-                             adapter['nominees'],
+                             adapter['winners'],
                          )
                          
                          )
