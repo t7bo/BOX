@@ -44,7 +44,7 @@ class MoviesPipeline:
                              movie_imdb_metascore INTEGER,
                              movie_countries TEXT,
                              movie_production_companies TEXT,
-                             movie_budget INTEGER,
+                             movie_budget TEXT,
                              movie_us_boxoffice INTEGER,
                              movie_boxoffice INTEGER
                              )
@@ -200,21 +200,22 @@ class MoviesPipeline:
                     if "(estimé)" in movie_budget:
                         movie_budget = movie_budget.replace("(estimé)", "")
                     
-                    currencies = {
-                        '$US' : 1,
-                        '$CA' : 1.36,
-                        '€' : 1.09,
-                        'RUR' : 0.92,
-                        '₩' : 0.00075,
-                        '£' : 1.27,
-                        '₹' : 0.012
-                    }
+                    # currencies = {
+                    #     '$US' : 1,
+                    #     '$CA' : 1.36,
+                    #     '€' : 1.09,
+                    #     'RUR' : 0.92,
+                    #     '₩' : 0.00075,
+                    #     '£' : 1.27,
+                    #     '₹' : 0.012
+                    # }
                     
-                    for currency, value in currencies.items():
-                        if currency in str(movie_budget):
-                            movie_budget = int(''.join(filter(str.isdigit, str(movie_budget)))) * value
+                    # for currency, value in currencies.items():
+                    #     if currency in str(movie_budget):
+                    #         movie_budget = int(''.join(filter(str.isdigit, str(movie_budget)))) * value
                                 
-                    movie_budget = int(''.join(filter(str.isdigit, str(movie_budget))))
+                    # movie_budget = int(''.join(filter(str.isdigit, str(movie_budget))))
+                    # movie_budget = str(movie_budget)
                 adapter['movie_budget'] = movie_budget
                 
             elif field_name == 'movie_us_boxoffice':
