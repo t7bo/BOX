@@ -32,6 +32,7 @@ class MoviesPipeline:
                              movie_id TEXT,
                              movie_url TEXT,
                              year DATETIME,
+                             release_date DATETIME,
                              movie_title TEXT,
                              movie_original_title TEXT,
                              movie_length TEXT,
@@ -47,7 +48,8 @@ class MoviesPipeline:
                              movie_production_companies TEXT,
                              movie_budget TEXT,
                              movie_us_boxoffice INTEGER,
-                             movie_boxoffice INTEGER
+                             movie_boxoffice INTEGER,
+                             movie_poster TEXT
                              )
                              
                              """)    
@@ -77,18 +79,53 @@ class MoviesPipeline:
                     year = int(year)
                 adapter["year"] = year
                 
+            elif field_name == 'release_date':
+                year = adapter.get('release_date')
+                if year is not None:
+                    year = str(year)
+                    # Remove useless str
+                    year = year.replace(" (France)", "")
+                            
+                    months = {
+                        "janvier": "January",
+                        "février": "February",
+                        "mars": "March",
+                        "avril": "April",
+                        "mai": "May",
+                        "juin": "June",
+                        "juillet": "July",
+                        "août": "August",
+                        "septembre": "September",
+                        "octobre": "October",
+                        "novembre": "November",
+                        "décembre": "December"
+                    }
+
+                    # Replace french months to english months
+                    for french_month, english_month in months.items():
+                        if french_month in year:
+                            year = year.replace(french_month, english_month)
+                            break
+                    
+                    # Define Date Format
+                    date_format = "%d %B %Y"  # %d for day, %B for month, %Y for Year
+                    # Convert str date to datetime date
+                    year = datetime.strptime(year, date_format)
+                    year = year.strftime("%d-%m-%Y")
+                    
+                adapter["release_date"] = year
+                
+                
             elif field_name == 'movie_title':
                 movie_title = adapter.get('movie_title')
                 movie_title = str(movie_title).title()
                 adapter['movie_title'] = movie_title
                 
             elif field_name == 'movie_original_title':
-                movie_original_title = adapter.get('movie_original_title')
-                if movie_original_title is not None:
-                    if "Original Title" in movie_original_title:
-                        movie_original_title = movie_original_title[16:]
-                    movie_original_title = str(movie_original_title).title()
-                adapter['movie_original_title'] = movie_original_title
+                original_title = adapter.get('movie_original_title')
+                if original_title is not None:
+                    original_title = original_title[16:]
+                adapter['movie_original_title'] = original_title
                 
             elif field_name == 'movie_length':
                 movie_length = adapter.get('movie_length')
@@ -190,7 +227,7 @@ class MoviesPipeline:
                 movie_production_companies = adapter.get('movie_production_companies')
                 if movie_production_companies is not None:
                     movie_production_companies = str(movie_production_companies)
-                    movie_production_companies = ''.join(movie_production_companies.replace("[", "").replace("]", "").replace("'", ""))
+                    movie_production_companies = ''.join(movie_production_companies.replace("[", "").replace("]", "").replace("'", "").replace('"', ''))
                     movie_production_companies = movie_production_companies.replace(', ', '|')
                 adapter['movie_production_companies'] = movie_production_companies
                 
@@ -215,8 +252,8 @@ class MoviesPipeline:
                     #     if currency in str(movie_budget):
                     #         movie_budget = int(''.join(filter(str.isdigit, str(movie_budget)))) * value
                                 
-                    # movie_budget = int(''.join(filter(str.isdigit, str(movie_budget))))
-                    # movie_budget = str(movie_budget)
+                    movie_budget = int(''.join(filter(str.isdigit, str(movie_budget))))
+                    movie_budget = str(movie_budget)
                 adapter['movie_budget'] = movie_budget
                 
             elif field_name == 'movie_us_boxoffice':
@@ -243,18 +280,25 @@ class MoviesPipeline:
                     if "$US" in movie_boxoffice:
                         movie_boxoffice = movie_boxoffice.replace("$US", "")
                     movie_boxoffice = int(''.join(filter(str.isdigit, movie_boxoffice)))
-                adapter['movie_boxoffice'] = movie_boxoffice         
+                adapter['movie_boxoffice'] = movie_boxoffice    
+                
+            elif field_name == 'movie_poster':
+                movie_poster = adapter.get('movie_poster')
+                if movie_poster is not None:
+                    movie_poster = str(movie_poster)  
+                adapter['movie_poster'] = movie_poster   
 
                          
             
         self.cur.execute("""
-                         INSERT INTO upcoming_movies (movie_id, movie_url, year, movie_title, movie_original_title, movie_length, movie_imdb_rating, movie_imdb_nb_of_ratings, movie_imdb_popularity, movie_synopsis, movie_director, movie_cast, movie_categories, movie_imdb_metascore, movie_countries, movie_production_companies, movie_budget, movie_us_boxoffice, movie_boxoffice) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         INSERT INTO upcoming_movies (movie_id, movie_url, year, release_date, movie_title, movie_original_title, movie_length, movie_imdb_rating, movie_imdb_nb_of_ratings, movie_imdb_popularity, movie_synopsis, movie_director, movie_cast, movie_categories, movie_imdb_metascore, movie_countries, movie_production_companies, movie_budget, movie_us_boxoffice, movie_boxoffice, movie_poster) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                          """,
                          
                          (
                              adapter["movie_id"],
                              adapter['movie_url'],
                              adapter['year'],
+                             adapter['release_date'],
                              adapter['movie_title'],
                              adapter['movie_original_title'],
                              adapter["movie_length"],
@@ -271,6 +315,7 @@ class MoviesPipeline:
                              adapter['movie_budget'],
                              adapter['movie_us_boxoffice'],
                              adapter['movie_boxoffice'],
+                             adapter['movie_poster']
                              
                              
                          )
@@ -279,54 +324,104 @@ class MoviesPipeline:
         
         self.con.commit()
         
-        # self.cur.execute("""
-        #                 CREATE TABLE IF NOT EXISTS upcoming_movies_categories(
+        self.cur.execute("""
+                        CREATE TABLE IF NOT EXISTS upcoming_movies_categories(
                             
-        #                     category TEXT UNIQUE
-        #                     )
+                            category TEXT UNIQUE
+                            )
                             
-        #                     """)
+                            """)
         
-        # # Loop on every modified category from the modified_categ list & insert data into table
-        #     # 1. Clean data accordingly  
-        # catset = adapter.get('movie_categories') 
-        # catset = str(catset)
-        # catset = movie_categories.split(",")
-        #     # 2. Insert data into DB
-        # for cat in catset:
-        #     self.cur.execute("""
-        #                         INSERT OR IGNORE INTO upcoming_movies_categories (category) VALUES (?)
-        #                         """,
-        #                         (
-        #                             cat,
-        #                         ))
+        # Loop on every modified category from the modified_categ list & insert data into table
+            # 1. Clean data accordingly  
+        catset = adapter.get('movie_categories') 
+        catset = str(catset)
+        catset = movie_categories.split("|")
+            # 2. Insert data into DB
+        for cat in catset:
+            self.cur.execute("""
+                                INSERT OR IGNORE INTO upcoming_movies_categories (category) VALUES (?)
+                                """,
+                                (
+                                    cat,
+                                ))
         
-        # self.con.commit()
+        self.con.commit()
         
         
-        # self.cur.execute("""
-        #                 CREATE TABLE IF NOT EXISTS upcoming_movies_countries(
+        self.cur.execute("""
+                        CREATE TABLE IF NOT EXISTS upcoming_movies_countries(
                             
-        #                     country TEXT UNIQUE
-        #                     )
+                            country TEXT UNIQUE
+                            )
                             
-        #                     """)
+                            """)
         
-        # # Loop on every modified country from the modified_categ list & insert data into table
-        #     # 1. Clean data accordingly  
-        # countries = adapter.get('movie_countries') 
-        # countries = str(countries)
-        # countries = countries.split(",")
-        #     # 2. Insert data into DB
-        # for country in countries:
-        #     self.cur.execute("""
-        #                         INSERT OR IGNORE INTO upcoming_movies_countries (country) VALUES (?)
-        #                         """,
-        #                         (
-        #                             country,
-        #                         ))
+        # Loop on every modified country from the modified_categ list & insert data into table
+            # 1. Clean data accordingly  
+        countries = adapter.get('movie_countries') 
+        countries = str(countries)
+        countries = countries.split("|")
+            # 2. Insert data into DB
+        for country in countries:
+            self.cur.execute("""
+                                INSERT OR IGNORE INTO upcoming_movies_countries (country) VALUES (?)
+                                """,
+                                (
+                                    country,
+                                ))
         
-        # self.con.commit()
+        self.con.commit()
+        
+    
+        self.cur.execute("""
+                        CREATE TABLE IF NOT EXISTS upcoming_movies_actors(
+                            
+                            actor TEXT UNIQUE
+                            )
+                            
+                            """)
+        
+        # Loop on every modified country from the modified_categ list & insert data into table
+            # 1. Clean data accordingly  
+        actors = adapter.get('movie_cast') 
+        actors = str(actors)
+        actors = actors.replace('"', '')
+        actors = actors.split("|")
+            # 2. Insert data into DB
+        for actor in actors:
+            self.cur.execute("""
+                                INSERT OR IGNORE INTO upcoming_movies_actors (actor) VALUES (?)
+                                """,
+                                (
+                                    actor,
+                                ))
+        
+        self.con.commit()
+        
+        self.cur.execute("""
+                        CREATE TABLE IF NOT EXISTS upcoming_movies_production_companies(
+                            
+                            production_company TEXT UNIQUE
+                            )
+                            
+                            """)
+        
+        # Loop on every modified country from the modified_categ list & insert data into table
+            # 1. Clean data accordingly  
+        companies = adapter.get('movie_production_companies') 
+        companies = str(companies)
+        companies = companies.split("|")
+            # 2. Insert data into DB
+        for company in companies:
+            self.cur.execute("""
+                                INSERT OR IGNORE INTO upcoming_movies_production_companies (production_company) VALUES (?)
+                                """,
+                                (
+                                    company,
+                                ))
+        
+        self.con.commit()
                     
         return item
     

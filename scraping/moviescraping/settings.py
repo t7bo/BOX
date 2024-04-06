@@ -109,3 +109,5 @@ DEFAULT_REQUEST_HEADERS = {
    "Accept-Language": "fr-FR",
    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:123.0) Gecko/20100101 Firefox/123.0",
 }
+
+HTTPERROR_ALLOWED_CODES = [503, 403, 404]  # Liste des codes d'erreur HTTP à ignorer

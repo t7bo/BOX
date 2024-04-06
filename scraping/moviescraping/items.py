@@ -21,6 +21,7 @@ class MovieItem(scrapy.Item):
     movie_id = scrapy.Field()
     movie_url = scrapy.Field()
     year = scrapy.Field()
+    release_date = scrapy.Field()
     movie_title = scrapy.Field()
     movie_original_title = scrapy.Field()
     movie_length = scrapy.Field()
@@ -37,6 +38,7 @@ class MovieItem(scrapy.Item):
     movie_budget = scrapy.Field()
     movie_us_boxoffice = scrapy.Field()
     movie_boxoffice = scrapy.Field()
+    movie_poster = scrapy.Field()
     
 class UpcomingMovieItem(scrapy.Item):
     movie_id = scrapy.Field()
