@@ -19,13 +19,13 @@ class ImdbOscarsSpider(CrawlSpider):
     
     @logger.catch
     def start_requests(self):
-        # oscar_year_page_urls = [f'https://www.imdb.com/event/ev0000003/{year}/1' for year in range(2000, 2025, 1)]
-        # for oscar_year_page_url in oscar_year_page_urls:
-        #     yield SeleniumRequest(url=oscar_year_page_url,
-        #                           wait_time=10,
-        #                           callback=self.parse, # Callback argument tells to which function it has to send the info
-        #     )      
-        yield SeleniumRequest(url='https://www.imdb.com/event/ev0000003/2024/1',callback=self.parse)         
+        oscar_year_page_urls = [f'https://www.imdb.com/event/ev0000003/{year}/1' for year in range(2000, 2025, 1)]
+        for oscar_year_page_url in oscar_year_page_urls:
+            yield SeleniumRequest(url=oscar_year_page_url,
+                                  wait_time=10,
+                                  callback=self.parse, # Callback argument tells to which function it has to send the info
+            )      
+        # yield SeleniumRequest(url='https://www.imdb.com/event/ev0000003/2024/1',callback=self.parse)         
         
     
     @logger.catch
@@ -67,16 +67,18 @@ class ImdbOscarsSpider(CrawlSpider):
             # 3. Assign categories to Item
         imdb_oscar_item['categories'] = categories
         
-        # Scrap all nominees & winners for every category
+        # Scrap all winners for every category
         nominees_list = driver.find_elements(By.CSS_SELECTOR, 'div.event-widgets__award h3.event-widgets__award-categories div.event-widgets__award-category')
         nominees = [nominee.text for nominee in nominees_list]
-        # Initialiser une liste pour stocker les gagnants
-        all_winners = []
-        # Utiliser une expression régulière pour extraire le gagnant
-        pattern = r'WINNER,(.*?)'
-        # Rechercher tous les matchs dans le texte
-        winners = re.findall(pattern, nominees_list)
-        # Ajouter les gagnants à l'élément imdb_oscar_item
-        imdb_oscar_item['nominees'] = winners
+        winners = []
+        winner = r'WINNER\n(.*?)\n'
+        for nominee in nominees:
+            winner_match = re.search(winner, nominee)
+            if winner_match:
+                winner_name = winner_match.group(1)
+                winner_name = winner_name.replace("\'", "")
+                winners.append(winner_name)
+
+        imdb_oscar_item['winners'] = winners
         
         yield imdb_oscar_item
