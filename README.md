@@ -42,3 +42,17 @@ The project involves developing a tool using artificial intelligence to estimate
 - **Insomnia**
 
 ## 4. Use a PostGres Docker Image instead of SQLite
+- **DockerHub** : PostGreSQL Image : https://hub.docker.com/_/postgres
+- **Docker**
+
+## 5. EDA (Data Analysis)
+- **Pandas**, **Matplotlib**, **Seaborn**
+
+## 6. Machine Learning (Predictive Model)
+- **Scikit-Learn**, **Pycaret**, **MLFlow**
+
+## 7. Web-App creation (Django App)
+- **HTML**, **CSS**, **Tailwind**, **Python**, **Django**
+
+## 8. Web-App deployment
+- **Azure**
