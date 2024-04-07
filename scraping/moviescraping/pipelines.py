@@ -27,7 +27,7 @@ class MoviesPipeline:
         self.cur = self.con.cursor()
         # create table
         self.cur.execute("""
-                         CREATE TABLE IF NOT EXISTS upcoming_movies(
+                         CREATE TABLE IF NOT EXISTS movies(
                              
                              movie_id TEXT,
                              movie_url TEXT,
@@ -80,11 +80,9 @@ class MoviesPipeline:
                 adapter["year"] = year
                 
             elif field_name == 'release_date':
-                year = adapter.get('release_date')
-                if year is not None:
-                    year = str(year)
-                    # Remove useless str
-                    year = year.replace(" (France)", "")
+                release = adapter.get('release_date')
+                if release is not None:
+                    release = str(release)
                             
                     months = {
                         "janvier": "January",
@@ -103,17 +101,20 @@ class MoviesPipeline:
 
                     # Replace french months to english months
                     for french_month, english_month in months.items():
-                        if french_month in year:
-                            year = year.replace(french_month, english_month)
+                        if french_month in release:
+                            release = release.replace(french_month, english_month)
                             break
                     
                     # Define Date Format
-                    date_format = "%d %B %Y"  # %d for day, %B for month, %Y for Year
-                    # Convert str date to datetime date
-                    year = datetime.strptime(year, date_format)
-                    year = year.strftime("%d-%m-%Y")
+                    # Définir le format de la date
+                    date_format = "%d %B %Y"  # %d pour le jour, %B pour le mois, %Y pour l'année
+
+                    # Convertir la date en format datetime
+                    release_date = datetime.strptime(release.split('(')[0].strip(), date_format)
+                    # Formater la date en 'dd-mm-yyyy'
+                    release_date_formatted = release_date.strftime("%d-%m-%Y")
                     
-                adapter["release_date"] = year
+                adapter["release_date"] = release_date_formatted
                 
                 
             elif field_name == 'movie_title':
@@ -291,7 +292,7 @@ class MoviesPipeline:
                          
             
         self.cur.execute("""
-                         INSERT INTO upcoming_movies (movie_id, movie_url, year, release_date, movie_title, movie_original_title, movie_length, movie_imdb_rating, movie_imdb_nb_of_ratings, movie_imdb_popularity, movie_synopsis, movie_director, movie_cast, movie_categories, movie_imdb_metascore, movie_countries, movie_production_companies, movie_budget, movie_us_boxoffice, movie_boxoffice, movie_poster) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         INSERT INTO movies (movie_id, movie_url, year, release_date, movie_title, movie_original_title, movie_length, movie_imdb_rating, movie_imdb_nb_of_ratings, movie_imdb_popularity, movie_synopsis, movie_director, movie_cast, movie_categories, movie_imdb_metascore, movie_countries, movie_production_companies, movie_budget, movie_us_boxoffice, movie_boxoffice, movie_poster) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                          """,
                          
                          (
@@ -325,7 +326,7 @@ class MoviesPipeline:
         self.con.commit()
         
         self.cur.execute("""
-                        CREATE TABLE IF NOT EXISTS upcoming_movies_categories(
+                        CREATE TABLE IF NOT EXISTS movies_categories(
                             
                             category TEXT UNIQUE
                             )
@@ -340,7 +341,7 @@ class MoviesPipeline:
             # 2. Insert data into DB
         for cat in catset:
             self.cur.execute("""
-                                INSERT OR IGNORE INTO upcoming_movies_categories (category) VALUES (?)
+                                INSERT OR IGNORE INTO movies_categories (category) VALUES (?)
                                 """,
                                 (
                                     cat,
@@ -350,7 +351,7 @@ class MoviesPipeline:
         
         
         self.cur.execute("""
-                        CREATE TABLE IF NOT EXISTS upcoming_movies_countries(
+                        CREATE TABLE IF NOT EXISTS movies_countries(
                             
                             country TEXT UNIQUE
                             )
@@ -365,7 +366,7 @@ class MoviesPipeline:
             # 2. Insert data into DB
         for country in countries:
             self.cur.execute("""
-                                INSERT OR IGNORE INTO upcoming_movies_countries (country) VALUES (?)
+                                INSERT OR IGNORE INTO movies_countries (country) VALUES (?)
                                 """,
                                 (
                                     country,
@@ -375,7 +376,7 @@ class MoviesPipeline:
         
     
         self.cur.execute("""
-                        CREATE TABLE IF NOT EXISTS upcoming_movies_actors(
+                        CREATE TABLE IF NOT EXISTS movies_actors(
                             
                             actor TEXT UNIQUE
                             )
@@ -391,7 +392,7 @@ class MoviesPipeline:
             # 2. Insert data into DB
         for actor in actors:
             self.cur.execute("""
-                                INSERT OR IGNORE INTO upcoming_movies_actors (actor) VALUES (?)
+                                INSERT OR IGNORE INTO movies_actors (actor) VALUES (?)
                                 """,
                                 (
                                     actor,
@@ -400,7 +401,7 @@ class MoviesPipeline:
         self.con.commit()
         
         self.cur.execute("""
-                        CREATE TABLE IF NOT EXISTS upcoming_movies_production_companies(
+                        CREATE TABLE IF NOT EXISTS movies_production_companies(
                             
                             production_company TEXT UNIQUE
                             )
@@ -415,7 +416,7 @@ class MoviesPipeline:
             # 2. Insert data into DB
         for company in companies:
             self.cur.execute("""
-                                INSERT OR IGNORE INTO upcoming_movies_production_companies (production_company) VALUES (?)
+                                INSERT OR IGNORE INTO movies_production_companies (production_company) VALUES (?)
                                 """,
                                 (
                                     company,
