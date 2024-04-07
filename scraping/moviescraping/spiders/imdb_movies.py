@@ -22,7 +22,7 @@ class ImdbMoviesSpider(scrapy.Spider):
     
     def start_requests(self):
     
-        data = pd.read_csv(r'C:\Users\Thibaut\Documents\SIMPLON\DEV-IA\BOXOFFICE\scraping\data\imdb_movies_id.csv')
+        data = pd.read_csv(r'C:\Users\Thibaut\Documents\SIMPLON\DEV-IA\BOXOFFICE\scraping\data\imdb_americanmovies_id.csv')
         for value in data.movie_id:
             url = f"https://www.imdb.com/title/{value}"
             # headers = {'User-Agent': get_random_user_agent()}

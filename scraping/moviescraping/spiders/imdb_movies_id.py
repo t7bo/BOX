@@ -12,9 +12,15 @@ class ImdbMoviesSpider(CrawlSpider):
     name = "imdb_movies_id"
     allowed_domains = ["www.imdb.com"]
     driver = webdriver.Chrome()
+    
+    custom_settings = {
+        'DOWNLOADER_MIDDLEWARES': {
+            'moviescraping.middlewares.CustomMiddleware': 400,
+        },
+    }
         
     def start_requests(self): # URL -> french audio movies (no documentaries, no shorts) from 2021 to 2025
-        url = "https://www.imdb.com/search/title/?title_type=feature&release_date=2000-01-01,2024-12-31&genres=!documentary,!short&languages=fr"
+        url = "https://www.imdb.com/search/title/?title_type=feature&release_date=2000-01-01,&genres=!documentary,!short&primary_language=fr,en&sound_mixes=dolby_digital"
         yield SeleniumRequest(url=url, callback=self.parse)
 
     @logger.catch
@@ -35,7 +41,7 @@ class ImdbMoviesSpider(CrawlSpider):
                 # Scroll down the page until you get to the element using JavaScript
                 self.driver.execute_script("arguments[0].scrollIntoView();", button)
                 # If there's a button "see more" -> click on it
-                time.sleep(3) # wait 2s
+                time.sleep(3)
                 button.click()
                 time.sleep(3)
         except NoSuchElementException:
@@ -52,6 +58,5 @@ class ImdbMoviesSpider(CrawlSpider):
     def parse_movie_page(self, response):
         yield {
             'movie_url': response.url,
-            'movie_id': re.search(r'tt\d+', str(response.url)).group(),
-            
+            'movie_id': re.search(r'tt\d+', str(response.url)).group()
         }
