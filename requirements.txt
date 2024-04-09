@@ -8,3 +8,6 @@ fake-useragent
 pandas<3 # for datasets
 matplotlib<4 # for graphs
 seaborn<1 # for graphs
+# Requirements for ML
+pycaret
+catboost
