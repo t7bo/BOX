@@ -11,3 +11,6 @@ seaborn<1 # for graphs
 # Requirements for ML
 pycaret
 catboost
+# Requirements for FastAPI
+fastapi<1
+uvicorn<1
